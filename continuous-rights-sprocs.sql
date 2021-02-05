@@ -3,7 +3,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [dbo].[prcCDI_LibraryRights_r] 
+ALTER PROCEDURE [dbo].[prcCDI_LibraryRights_tbonghi_r] 
 
 @LibraryHash varchar(50)
 
@@ -128,13 +128,15 @@ END
 		LibraryHash,
 		LibraryName,
 		Institution=LibraryName,
-		InstitutionCode
+		InstitutionCode,
+        ProxyURL,
+        ProxyType
 	INTO dbo.#tblLibrary
 	FROM dbo.tblAlmaInstitution
 	WHERE LibraryId=@LibraryId;
 
 	-- note : IsFullText logic is from SSDBx.viewDataFeed_SOA_Database
-	SELECT DatabaseId, DatabaseCode, DatabaseName, ProviderId, IsFullText=CASE WHEN DatabaseId=9999999 THEN 1 ELSE 0 END,Source
+	SELECT DatabaseId, DatabaseCode, DatabaseName, ProviderId, IsFullText=CASE WHEN DatabaseId=9999999 THEN 1 ELSE 0 END,Source, ProviderCode, ProviderName, TitleURLDefault
 	INTO dbo.#tblDatabase
 	FROM (
 		-- libific Catalog, IR, LibGuides databases
@@ -143,9 +145,13 @@ END
 			id.DatabaseCode, 
 			id.DatabaseName, 
 			id.ProviderId,
-			Source=id.DatabaseType
+			Source=id.DatabaseType,
+            p.ProviderCode,
+            p.ProviderName,
+            p.TitleURLDefault
 		FROM dbo.tblAlmaInstitutionDatabase id
 		INNER JOIN dbo.#tblLibrary l ON l.LibraryId=id.LibraryId
+        INNER JOIN dbo.tblSF_Provider p ON p.ProviderId=id.ProviderId
 
 		UNION  ALL
 
@@ -154,9 +160,13 @@ END
 			DatabaseId, 
 			DatabaseCode, 
 			DatabaseName, 
-			ProviderId,
-			Source='Unassigned Holdings'
-		FROM dbo.tblSF_Database
+			id.ProviderId,
+			Source='Unassigned Holdings',
+            p.ProviderCode,
+            p.ProviderName,
+            p.TitleURLDefault
+		FROM dbo.tblSF_Database id
+        INNER JOIN dbo.tblSF_Provider p ON p.ProviderId=id.ProviderId
 	) x
 
 -------------------------------------------------------------------------------------------------------------------
@@ -257,7 +267,7 @@ INNER JOIN dbo.#tblDatabase d ON d.DatabaseId=ld.DatabaseId;
 -------------------------------------------------
 -- Library
 -------------------------------------------------
-SELECT LibraryId,LibraryHash,LibraryName,Institution
+SELECT LibraryId,LibraryHash,LibraryName,Institution,ProxyURL=NULL,ProxyType=NULL
 FROM dbo.#tblLibrary;
 
 -------------------------------------------------
@@ -272,14 +282,17 @@ SELECT
 	IsFullText,
 	JournalLinkCoverage=NULL,
 	ArticleLinkCoverage=NULL,
-	MediaType=NULL
+	MediaType=NULL, 
+    ProviderCode=NULL, 
+    ProviderName=NULL, 
+    TitleURLDefault=NULL
 FROM dbo.#tblDatabase;
 
 -------------------------------------------------
 -- Library Databases
 -------------------------------------------------
 -- per viewDataFeed_SOA_LibraryDatabase, DateStart and DateEnd and DateDisplay are all NULL
-SELECT d.DatabaseCode, DateStart=NULL, DateEnd=NULL, DateDisplay=NULL, ld.IsSelect, d.IsFulltext, ld.LibraryId
+SELECT d.DatabaseCode, DateStart=NULL, DateEnd=NULL, DateDisplay=NULL, ld.IsSelect, d.IsFulltext, ld.LibraryId, ld.LibraryDatabaseId, ld.LibraryHash, ld.OmitProxy, ld.LinkAuthorization
 FROM dbo.#tblLibraryDatabase ld
 INNER JOIN (
 	SELECT DatabaseId,DatabaseCode,IsFulltext FROM dbo.#tblDatabase
@@ -321,7 +334,8 @@ PRINT CONCAT('Library Databases (IsSelect=0/False) : ', @LibraryDatabases);
 -------------------------------------------------
 SELECT DISTINCT 
 	LibraryId=@LibraryId,
-	tm.SSIdentifier
+	tm.SSIdentifier,
+	ld.LibraryDatabaseId
 FROM dbo.#tblLibraryDatabase ld
 INNER JOIN dbo.tblSF_LibraryDatabaseTitle_Monograph ldt ON ldt.LibraryDatabaseId=ld.LibraryDatabaseId
 INNER JOIN dbo.synSSDBx_tblTitleMap tm ON tm.SSID_Lookup=ldt.SSIdentifier
@@ -342,7 +356,8 @@ SELECT
 	de.DateEnd, 
 	de.DateDisplay, 
 	d.IsFullText,
-	LibraryId=@LibraryId
+	LibraryId=@LibraryId,
+	ld.LibraryDatabaseId
 FROM dbo.#tblLibraryDatabase ld
 INNER JOIN dbo.tblSF_LibraryDatabaseTitle_Serial ldt ON ldt.LibraryDatabaseId=ld.LibraryDatabaseId
 INNER JOIN dbo.synSSDBx_tblTitleMap tm ON tm.SSID_Lookup=ldt.SSIdentifier
