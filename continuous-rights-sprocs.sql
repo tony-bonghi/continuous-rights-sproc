@@ -291,7 +291,7 @@ FROM dbo.#tblDatabase;
 -- Library Databases
 -------------------------------------------------
 -- per viewDataFeed_SOA_LibraryDatabase, DateStart and DateEnd and DateDisplay are all NULL
-SELECT d.DatabaseCode, DateStart=NULL, DateEnd=NULL, DateDisplay=NULL, ld.IsSelect, d.IsFulltext, ld.LibraryId, ld.LibraryDatabaseId, ld.LibraryHash, ld.OmitProxy, ld.LinkAuthorization
+SELECT d.DatabaseCode, DateStart=NULL, DateEnd=NULL, DateDisplay=NULL, ld.IsSelect, d.IsFulltext, ld.LibraryId, ld.LibraryDatabaseId, ld.LibraryHash, ld.OmitProxy, ld.LinkAuthorization, ld.CustomDBURL
 FROM dbo.#tblLibraryDatabase ld
 INNER JOIN (
 	SELECT DatabaseId,DatabaseCode,IsFulltext FROM dbo.#tblDatabase
