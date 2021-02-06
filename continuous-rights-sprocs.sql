@@ -284,8 +284,7 @@ SELECT
 	ArticleLinkCoverage=NULL,
 	MediaType=NULL, 
     ProviderCode=NULL, 
-    ProviderName=NULL, 
-    TitleURLDefault=NULL
+    ProviderName=NULL
 FROM dbo.#tblDatabase;
 
 -------------------------------------------------
