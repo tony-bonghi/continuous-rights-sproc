@@ -50,6 +50,7 @@ ORDER BY ih.CDI_ImportHoldingsId DESC
 ** 2020-09-01	EddieK		Created per CDI-773
 ** 2020-09-14	EddieK		on error log CDI_AppErrorId to tblxCDI_LibraryRightsLog
 							make sure CDI import for @LibraryHash is not running as this sprocs begins - else error out
+** 2021-02-23   TBonghi     Added fields missed in CDI-773 work required to build the API rights cache
 ************************************************************************************
 */
 
